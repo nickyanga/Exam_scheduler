@@ -599,7 +599,6 @@
         <button class="tab-button active" data-tab="schedule">
           Schedule Exam
         </button>
-        <button class="tab-button" data-tab="view">View Scheduled Exams</button>
         <button class="tab-button" data-tab="calendar">Calendar View</button>
       </div>
       <!-- Tab 1: Schedule Exam -->
@@ -749,42 +748,7 @@
           >
         </div>
       </div>
-      <!-- Tab 2: View Scheduled Exams -->
-      <div id="view" class="tab-content">
-        <h2>Scheduled Exams</h2>
-        <div id="view-alert"></div>
-        <div class="loading" id="loading-exams">Loading exams...</div>
-        <table class="exam-table" style="display: none" id="exam-table">
-          <thead>
-            <tr>
-              <th>Subject</th>
-              <th>Date</th>
-              <th>Start Time</th>
-              <th>End Time</th>
-              <th>Venue</th>
-              <th>Teaching Group</th>
-              <th>Laptops/Cand</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="exam-list"></tbody>
-        </table>
-        <!-- Delete All Button Container -->
-        <div
-          id="delete-all-container"
-          class="delete-all-container"
-          style="display: none"
-        >
-          <button
-            id="delete-all-btn"
-            class="btn btn-danger"
-            onclick="deleteAllExams()"
-          >
-            Delete All Exams
-          </button>
-        </div>
-      </div>
-      <!-- Tab 3: Calendar View -->
+      <!-- Tab 2: Calendar View -->
       <div id="calendar" class="tab-content">
         <div class="stats-grid">
           <div class="stat-card">
@@ -824,6 +788,20 @@
         </div>
         <div class="venue-legend" id="venue-legend"></div>
         <div id="month-view"></div>
+        <div id="calendar-alert"></div>
+        <div
+          id="delete-all-container"
+          class="delete-all-container"
+          style="display: none"
+        >
+          <button
+            id="delete-all-btn"
+            class="btn btn-danger"
+            onclick="deleteAllExams()"
+          >
+            Delete All Exams
+          </button>
+        </div>
         <!-- Day summary popup -->
         <div class="exam-popup-overlay" id="day-summary-popup" style="display: none">
           <div class="exam-popup-card">
@@ -868,6 +846,9 @@
               <button class="btn btn-primary" onclick="editExamFromPopup()">
                 Edit Exam
               </button>
+              <button class="btn btn-danger" onclick="deleteExamFromPopup()">
+                Delete Exam
+              </button>
               <button class="btn btn-secondary" onclick="closeExamPopup()">
                 Close
               </button>
@@ -910,10 +891,6 @@
             .forEach((content) => content.classList.remove("active"));
           button.classList.add("active");
           document.getElementById(button.dataset.tab).classList.add("active");
-          // Reload exams when viewing exams tab
-          if (button.dataset.tab === "view") {
-            loadExams();
-          }
           // Initialize calendar when switching to calendar tab
           if (button.dataset.tab === "calendar") {
             if (exams.length === 0) {
@@ -1024,38 +1001,17 @@
       // Load exams from server
       function loadExams() {
         console.log("=== loadExams called ===");
-        const loadingDiv = document.getElementById("loading-exams");
-        const tableDiv = document.getElementById("exam-table");
-        loadingDiv.style.display = "block";
-        tableDiv.style.display = "none";
         console.log("Calling google.script.run.getExams()...");
         google.script.run
           .withSuccessHandler((serverExams) => {
             console.log("=== SUCCESS HANDLER CALLED ===");
             console.log("Raw response:", serverExams);
-            console.log("Type of serverExams:", typeof serverExams);
-            console.log("Is array:", Array.isArray(serverExams));
-            console.log("Is null:", serverExams === null);
-            console.log("Is undefined:", serverExams === undefined);
             // Handle null or undefined response
-            if (serverExams === null) {
-              console.error("ERROR: serverExams is explicitly null!");
-              loadingDiv.innerHTML =
-                '<p class="empty-state" style="color: red;">Error: getExams() returned null. Check execution logs in Apps Script.</p>';
+            if (serverExams === null || serverExams === undefined) {
+              console.error("ERROR: serverExams is null or undefined!");
               showAlert(
-                "view-alert",
-                "Unable to load exams. The server returned null.",
-                true,
-              );
-              return;
-            }
-            if (serverExams === undefined) {
-              console.error("ERROR: serverExams is undefined!");
-              loadingDiv.innerHTML =
-                '<p class="empty-state" style="color: red;">Error: getExams() returned undefined. Check execution logs in Apps Script.</p>';
-              showAlert(
-                "view-alert",
-                "Unable to load exams. The server returned undefined.",
+                "calendar-alert",
+                "Unable to load exams. The server returned no data.",
                 true,
               );
               return;
@@ -1063,7 +1019,6 @@
             // Ensure it's an array
             if (!Array.isArray(serverExams)) {
               console.error("ERROR: serverExams is not an array:", serverExams);
-              console.log("Attempting to convert to array...");
               exams = [];
             } else {
               console.log(
@@ -1073,10 +1028,12 @@
               );
               exams = serverExams;
             }
-            loadingDiv.style.display = "none";
-            tableDiv.style.display = "table";
-            updateExamList();
             updateStats();
+            // Update delete-all button visibility
+            const deleteAllContainer = document.getElementById("delete-all-container");
+            if (deleteAllContainer) {
+              deleteAllContainer.style.display = exams.length > 0 ? "block" : "none";
+            }
             // Refresh calendar if it's the active tab
             if (
               document.getElementById("calendar").classList.contains("active")
@@ -1087,58 +1044,14 @@
           })
           .withFailureHandler((error) => {
             console.error("=== FAILURE HANDLER CALLED ===");
-            console.error("Error object:", error);
-            console.error("Error message:", error.message);
-            console.error("Error stack:", error.stack);
-            loadingDiv.innerHTML =
-              '<p class="empty-state" style="color: red;">Error loading exams: ' +
-              error.message +
-              "</p>";
+            console.error("Error:", error.message);
             showAlert(
-              "view-alert",
+              "calendar-alert",
               "Failed to load exams: " + error.message,
               true,
             );
           })
           .getExams();
-      }
-      // Update exam list in table
-      function updateExamList() {
-        const tbody = document.getElementById("exam-list");
-        const deleteAllContainer = document.getElementById(
-          "delete-all-container",
-        );
-        if (exams.length === 0) {
-          tbody.innerHTML =
-            '<tr><td colspan="8" class="empty-state">No exams scheduled yet</td></tr>';
-          // Hide delete all button when no exams exist
-          if (deleteAllContainer) {
-            deleteAllContainer.style.display = "none";
-          }
-          return;
-        }
-        tbody.innerHTML = exams
-          .map(
-            (exam) => `
-                <tr>
-                    <td>${exam.name}</td>
-                    <td>${formatDate(exam.date)}</td>
-                    <td>${exam.time}</td>
-                    <td>${exam.endTime || ""}</td>
-                    <td>${exam.venue}</td>
-                    <td>${exam.class}</td>
-                    <td>${exam.laptopsNeeded}</td>
-                    <td>
-                        <button class="btn btn-danger" onclick="deleteExam(${exam.id})">Delete</button>
-                    </td>
-                </tr>
-            `,
-          )
-          .join("");
-        // Show delete all button when exams exist
-        if (deleteAllContainer) {
-          deleteAllContainer.style.display = "block";
-        }
       }
       // Format date for display
       function formatDate(dateValue) {
@@ -1179,14 +1092,14 @@
         google.script.run
           .withSuccessHandler((response) => {
             if (response.success) {
-              showAlert("view-alert", response.message, false);
+              showAlert("calendar-alert", response.message, false);
               loadExams();
             } else {
-              showAlert("view-alert", response.message, true);
+              showAlert("calendar-alert", response.message, true);
             }
           })
           .withFailureHandler((error) => {
-            showAlert("view-alert", "Error: " + error.message, true);
+            showAlert("calendar-alert", "Error: " + error.message, true);
           })
           .deleteExam(examId);
       }
@@ -1211,17 +1124,17 @@
             deleteAllBtn.textContent = originalText;
             deleteAllBtn.disabled = false;
             if (response.success) {
-              showAlert("view-alert", response.message, false);
-              loadExams(); // Refresh the table
+              showAlert("calendar-alert", response.message, false);
+              loadExams(); // Refresh the calendar
             } else {
-              showAlert("view-alert", response.message, true);
+              showAlert("calendar-alert", response.message, true);
             }
           })
           .withFailureHandler((error) => {
             // Re-enable button on failure
             deleteAllBtn.textContent = originalText;
             deleteAllBtn.disabled = false;
-            showAlert("view-alert", "Error: " + error.message, true);
+            showAlert("calendar-alert", "Error: " + error.message, true);
           })
           .deleteAllExams();
       }
@@ -2053,6 +1966,12 @@
       function closeExamPopup() {
         document.getElementById("exam-popup").style.display = "none";
         calendarState.selectedExamId = null;
+      }
+      function deleteExamFromPopup() {
+        var examId = calendarState.selectedExamId;
+        if (!examId) return;
+        closeExamPopup();
+        deleteExam(examId);
       }
       function editExamFromPopup() {
         var exam = exams.find(function (e) {
