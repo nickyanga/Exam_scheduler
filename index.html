@@ -417,33 +417,6 @@
         font-weight: 600;
         margin-left: 0.5rem;
       }
-      .calendar-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-      }
-      .view-toggle {
-        display: flex;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        overflow: hidden;
-      }
-      .view-toggle-btn {
-        padding: 0.4rem 1rem;
-        border-radius: 0;
-        background-color: white;
-        color: #333;
-        border: none;
-        border-right: 1px solid #ddd;
-        font-size: 0.875rem;
-      }
-      .view-toggle-btn:last-child {
-        border-right: none;
-      }
-      .view-toggle-btn.active {
-        background-color: #3498db;
-        color: white;
-      }
       /* Venue Legend */
       .venue-legend {
         display: flex;
@@ -466,13 +439,6 @@
         height: 12px;
         border-radius: 3px;
         flex-shrink: 0;
-      }
-      /* Calendar View Toggle */
-      .calendar-view {
-        display: none;
-      }
-      .calendar-view.active {
-        display: block;
       }
       /* Month Grid */
       .month-grid {
@@ -542,66 +508,6 @@
       }
       .more-badge:hover {
         color: #333;
-      }
-      /* Week Grid */
-      .week-grid {
-        display: grid;
-        grid-template-columns: 60px repeat(7, 1fr);
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        overflow: hidden;
-      }
-      .week-header-cell {
-        background-color: #f8f9fa;
-        padding: 0.5rem 0.25rem;
-        text-align: center;
-        font-weight: 600;
-        font-size: 0.75rem;
-        color: #555;
-        border-bottom: 1px solid #ddd;
-        border-right: 1px solid #eee;
-      }
-      .week-header-cell:last-child {
-        border-right: none;
-      }
-      .week-header-cell.today {
-        background-color: #e3f2fd;
-        color: #1565c0;
-      }
-      .week-time-label {
-        padding: 0.25rem;
-        font-size: 0.7rem;
-        color: #888;
-        text-align: right;
-        border-right: 1px solid #ddd;
-        border-bottom: 1px solid #eee;
-        height: 60px;
-      }
-      .week-day-column {
-        position: relative;
-        border-right: 1px solid #eee;
-        border-bottom: 1px solid #eee;
-        height: 60px;
-      }
-      .week-day-column:last-child {
-        border-right: none;
-      }
-      .week-exam-block {
-        position: absolute;
-        left: 2px;
-        right: 2px;
-        border-radius: 3px;
-        padding: 2px 4px;
-        font-size: 0.65rem;
-        color: white;
-        overflow: hidden;
-        cursor: pointer;
-        z-index: 1;
-        line-height: 1.2;
-      }
-      .week-exam-block:hover {
-        opacity: 0.85;
-        z-index: 2;
       }
       /* Exam Popup */
       .exam-popup-overlay {
@@ -678,12 +584,6 @@
         .exam-badge {
           font-size: 0.55rem;
         }
-        .week-grid {
-          grid-template-columns: 40px repeat(7, 1fr);
-        }
-        .week-time-label {
-          font-size: 0.6rem;
-        }
       }
     </style>
   </head>
@@ -699,7 +599,6 @@
         <button class="tab-button active" data-tab="schedule">
           Schedule Exam
         </button>
-        <button class="tab-button" data-tab="view">View Scheduled Exams</button>
         <button class="tab-button" data-tab="calendar">Calendar View</button>
       </div>
       <!-- Tab 1: Schedule Exam -->
@@ -849,42 +748,7 @@
           >
         </div>
       </div>
-      <!-- Tab 2: View Scheduled Exams -->
-      <div id="view" class="tab-content">
-        <h2>Scheduled Exams</h2>
-        <div id="view-alert"></div>
-        <div class="loading" id="loading-exams">Loading exams...</div>
-        <table class="exam-table" style="display: none" id="exam-table">
-          <thead>
-            <tr>
-              <th>Subject</th>
-              <th>Date</th>
-              <th>Start Time</th>
-              <th>End Time</th>
-              <th>Venue</th>
-              <th>Teaching Group</th>
-              <th>Laptops/Cand</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="exam-list"></tbody>
-        </table>
-        <!-- Delete All Button Container -->
-        <div
-          id="delete-all-container"
-          class="delete-all-container"
-          style="display: none"
-        >
-          <button
-            id="delete-all-btn"
-            class="btn btn-danger"
-            onclick="deleteAllExams()"
-          >
-            Delete All Exams
-          </button>
-        </div>
-      </div>
-      <!-- Tab 3: Calendar View -->
+      <!-- Tab 2: Calendar View -->
       <div id="calendar" class="tab-content">
         <div class="stats-grid">
           <div class="stat-card">
@@ -914,35 +778,41 @@
             </button>
             <span class="calendar-title" id="calendar-title"></span>
           </div>
-          <div class="calendar-actions">
-            <button
-              class="btn btn-secondary calendar-nav-btn"
-              id="cal-today"
-              onclick="navigateToday()"
-            >
-              Today
-            </button>
-            <div class="view-toggle">
-              <button
-                class="btn view-toggle-btn active"
-                id="btn-month"
-                onclick="switchCalendarView('month')"
-              >
-                Month
-              </button>
-              <button
-                class="btn view-toggle-btn"
-                id="btn-week"
-                onclick="switchCalendarView('week')"
-              >
-                Week
-              </button>
+          <button
+            class="btn btn-secondary calendar-nav-btn"
+            id="cal-today"
+            onclick="navigateToday()"
+          >
+            Today
+          </button>
+        </div>
+        <div class="venue-legend" id="venue-legend"></div>
+        <div id="month-view"></div>
+        <div id="calendar-alert"></div>
+        <div
+          id="delete-all-container"
+          class="delete-all-container"
+          style="display: none"
+        >
+          <button
+            id="delete-all-btn"
+            class="btn btn-danger"
+            onclick="deleteAllExams()"
+          >
+            Delete All Exams
+          </button>
+        </div>
+        <!-- Day summary popup -->
+        <div class="exam-popup-overlay" id="day-summary-popup" style="display: none">
+          <div class="exam-popup-card">
+            <button class="popup-close" onclick="closeDaySummary()">&times;</button>
+            <h3 id="day-summary-title"></h3>
+            <div id="day-summary-list" style="margin-top: 0.75rem; max-height: 300px; overflow-y: auto;"></div>
+            <div class="popup-actions" style="margin-top: 1rem;">
+              <button class="btn btn-secondary" onclick="closeDaySummary()">Close</button>
             </div>
           </div>
         </div>
-        <div class="venue-legend" id="venue-legend"></div>
-        <div id="month-view" class="calendar-view active"></div>
-        <div id="week-view" class="calendar-view"></div>
         <!-- Exam popup overlay -->
         <div class="exam-popup-overlay" id="exam-popup" style="display: none">
           <div class="exam-popup-card">
@@ -975,6 +845,9 @@
             <div class="popup-actions">
               <button class="btn btn-primary" onclick="editExamFromPopup()">
                 Edit Exam
+              </button>
+              <button class="btn btn-danger" onclick="deleteExamFromPopup()">
+                Delete Exam
               </button>
               <button class="btn btn-secondary" onclick="closeExamPopup()">
                 Close
@@ -1018,10 +891,6 @@
             .forEach((content) => content.classList.remove("active"));
           button.classList.add("active");
           document.getElementById(button.dataset.tab).classList.add("active");
-          // Reload exams when viewing exams tab
-          if (button.dataset.tab === "view") {
-            loadExams();
-          }
           // Initialize calendar when switching to calendar tab
           if (button.dataset.tab === "calendar") {
             if (exams.length === 0) {
@@ -1132,38 +1001,17 @@
       // Load exams from server
       function loadExams() {
         console.log("=== loadExams called ===");
-        const loadingDiv = document.getElementById("loading-exams");
-        const tableDiv = document.getElementById("exam-table");
-        loadingDiv.style.display = "block";
-        tableDiv.style.display = "none";
         console.log("Calling google.script.run.getExams()...");
         google.script.run
           .withSuccessHandler((serverExams) => {
             console.log("=== SUCCESS HANDLER CALLED ===");
             console.log("Raw response:", serverExams);
-            console.log("Type of serverExams:", typeof serverExams);
-            console.log("Is array:", Array.isArray(serverExams));
-            console.log("Is null:", serverExams === null);
-            console.log("Is undefined:", serverExams === undefined);
             // Handle null or undefined response
-            if (serverExams === null) {
-              console.error("ERROR: serverExams is explicitly null!");
-              loadingDiv.innerHTML =
-                '<p class="empty-state" style="color: red;">Error: getExams() returned null. Check execution logs in Apps Script.</p>';
+            if (serverExams === null || serverExams === undefined) {
+              console.error("ERROR: serverExams is null or undefined!");
               showAlert(
-                "view-alert",
-                "Unable to load exams. The server returned null.",
-                true,
-              );
-              return;
-            }
-            if (serverExams === undefined) {
-              console.error("ERROR: serverExams is undefined!");
-              loadingDiv.innerHTML =
-                '<p class="empty-state" style="color: red;">Error: getExams() returned undefined. Check execution logs in Apps Script.</p>';
-              showAlert(
-                "view-alert",
-                "Unable to load exams. The server returned undefined.",
+                "calendar-alert",
+                "Unable to load exams. The server returned no data.",
                 true,
               );
               return;
@@ -1171,7 +1019,6 @@
             // Ensure it's an array
             if (!Array.isArray(serverExams)) {
               console.error("ERROR: serverExams is not an array:", serverExams);
-              console.log("Attempting to convert to array...");
               exams = [];
             } else {
               console.log(
@@ -1181,10 +1028,12 @@
               );
               exams = serverExams;
             }
-            loadingDiv.style.display = "none";
-            tableDiv.style.display = "table";
-            updateExamList();
             updateStats();
+            // Update delete-all button visibility
+            const deleteAllContainer = document.getElementById("delete-all-container");
+            if (deleteAllContainer) {
+              deleteAllContainer.style.display = exams.length > 0 ? "block" : "none";
+            }
             // Refresh calendar if it's the active tab
             if (
               document.getElementById("calendar").classList.contains("active")
@@ -1195,58 +1044,14 @@
           })
           .withFailureHandler((error) => {
             console.error("=== FAILURE HANDLER CALLED ===");
-            console.error("Error object:", error);
-            console.error("Error message:", error.message);
-            console.error("Error stack:", error.stack);
-            loadingDiv.innerHTML =
-              '<p class="empty-state" style="color: red;">Error loading exams: ' +
-              error.message +
-              "</p>";
+            console.error("Error:", error.message);
             showAlert(
-              "view-alert",
+              "calendar-alert",
               "Failed to load exams: " + error.message,
               true,
             );
           })
           .getExams();
-      }
-      // Update exam list in table
-      function updateExamList() {
-        const tbody = document.getElementById("exam-list");
-        const deleteAllContainer = document.getElementById(
-          "delete-all-container",
-        );
-        if (exams.length === 0) {
-          tbody.innerHTML =
-            '<tr><td colspan="8" class="empty-state">No exams scheduled yet</td></tr>';
-          // Hide delete all button when no exams exist
-          if (deleteAllContainer) {
-            deleteAllContainer.style.display = "none";
-          }
-          return;
-        }
-        tbody.innerHTML = exams
-          .map(
-            (exam) => `
-                <tr>
-                    <td>${exam.name}</td>
-                    <td>${formatDate(exam.date)}</td>
-                    <td>${exam.time}</td>
-                    <td>${exam.endTime || ""}</td>
-                    <td>${exam.venue}</td>
-                    <td>${exam.class}</td>
-                    <td>${exam.laptopsNeeded}</td>
-                    <td>
-                        <button class="btn btn-danger" onclick="deleteExam(${exam.id})">Delete</button>
-                    </td>
-                </tr>
-            `,
-          )
-          .join("");
-        // Show delete all button when exams exist
-        if (deleteAllContainer) {
-          deleteAllContainer.style.display = "block";
-        }
       }
       // Format date for display
       function formatDate(dateValue) {
@@ -1287,14 +1092,14 @@
         google.script.run
           .withSuccessHandler((response) => {
             if (response.success) {
-              showAlert("view-alert", response.message, false);
+              showAlert("calendar-alert", response.message, false);
               loadExams();
             } else {
-              showAlert("view-alert", response.message, true);
+              showAlert("calendar-alert", response.message, true);
             }
           })
           .withFailureHandler((error) => {
-            showAlert("view-alert", "Error: " + error.message, true);
+            showAlert("calendar-alert", "Error: " + error.message, true);
           })
           .deleteExam(examId);
       }
@@ -1319,17 +1124,17 @@
             deleteAllBtn.textContent = originalText;
             deleteAllBtn.disabled = false;
             if (response.success) {
-              showAlert("view-alert", response.message, false);
-              loadExams(); // Refresh the table
+              showAlert("calendar-alert", response.message, false);
+              loadExams(); // Refresh the calendar
             } else {
-              showAlert("view-alert", response.message, true);
+              showAlert("calendar-alert", response.message, true);
             }
           })
           .withFailureHandler((error) => {
             // Re-enable button on failure
             deleteAllBtn.textContent = originalText;
             deleteAllBtn.disabled = false;
-            showAlert("view-alert", "Error: " + error.message, true);
+            showAlert("calendar-alert", "Error: " + error.message, true);
           })
           .deleteAllExams();
       }
@@ -1969,7 +1774,6 @@
       }
       // ===== CALENDAR FUNCTIONS =====
       var calendarState = {
-        currentView: "month",
         currentDate: new Date(),
         selectedExamId: null,
       };
@@ -2014,87 +1818,26 @@
         legend.innerHTML = html;
       }
       function navigatePrevious() {
-        if (calendarState.currentView === "month") {
-          calendarState.currentDate.setMonth(
-            calendarState.currentDate.getMonth() - 1,
-          );
-        } else {
-          calendarState.currentDate.setDate(
-            calendarState.currentDate.getDate() - 7,
-          );
-        }
+        calendarState.currentDate.setMonth(
+          calendarState.currentDate.getMonth() - 1,
+        );
         renderCalendar();
       }
       function navigateNext() {
-        if (calendarState.currentView === "month") {
-          calendarState.currentDate.setMonth(
-            calendarState.currentDate.getMonth() + 1,
-          );
-        } else {
-          calendarState.currentDate.setDate(
-            calendarState.currentDate.getDate() + 7,
-          );
-        }
+        calendarState.currentDate.setMonth(
+          calendarState.currentDate.getMonth() + 1,
+        );
         renderCalendar();
       }
       function navigateToday() {
         calendarState.currentDate = new Date();
         renderCalendar();
       }
-      function switchCalendarView(view) {
-        calendarState.currentView = view;
-        document
-          .getElementById("btn-month")
-          .classList.toggle("active", view === "month");
-        document
-          .getElementById("btn-week")
-          .classList.toggle("active", view === "week");
-        document
-          .getElementById("month-view")
-          .classList.toggle("active", view === "month");
-        document
-          .getElementById("week-view")
-          .classList.toggle("active", view === "week");
-        renderCalendar();
-      }
       function renderCalendar() {
-        updateCalendarTitle();
-        if (calendarState.currentView === "month") {
-          renderMonthView();
-        } else {
-          renderWeekView();
-        }
-      }
-      function updateCalendarTitle() {
         var d = calendarState.currentDate;
-        var title = "";
-        if (calendarState.currentView === "month") {
-          title = d.toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-          });
-        } else {
-          var ws = getWeekStart(d);
-          var we = new Date(ws);
-          we.setDate(we.getDate() + 6);
-          title =
-            ws.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
-            " – " +
-            we.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            });
-        }
-        document.getElementById("calendar-title").textContent = title;
-      }
-      function getWeekStart(date) {
-        var d = new Date(date);
-        var day = d.getDay();
-        var diff = (day === 0 ? -6 : 1) - day;
-        d.setDate(d.getDate() + diff);
-        d.setHours(0, 0, 0, 0);
-        return d;
+        document.getElementById("calendar-title").textContent =
+          d.toLocaleDateString("en-US", { year: "numeric", month: "long" });
+        renderMonthView();
       }
       function dateToString(d) {
         var y = d.getFullYear();
@@ -2177,112 +1920,30 @@
         container.innerHTML = html;
       }
       function monthDayClick(dateStr) {
-        var parts = dateStr.split("-");
-        calendarState.currentDate = new Date(
-          parseInt(parts[0]),
-          parseInt(parts[1]) - 1,
-          parseInt(parts[2]),
-        );
-        switchCalendarView("week");
-      }
-      function renderWeekView() {
-        var container = document.getElementById("week-view");
-        var ws = getWeekStart(calendarState.currentDate);
-        var todayStr = dateToString(new Date());
-        var startHour = 8;
-        var endHour = 17;
-        var hourHeight = 60;
-        var html = '<div class="week-grid">';
-        // Header row
-        html += '<div class="week-header-cell"></div>';
-        for (var i = 0; i < 7; i++) {
-          var day = new Date(ws);
-          day.setDate(day.getDate() + i);
-          var dayStr = dateToString(day);
-          var isToday = dayStr === todayStr;
-          html +=
-            '<div class="week-header-cell' +
-            (isToday ? " today" : "") +
-            '">' +
-            day.toLocaleDateString("en-US", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            }) +
-            "</div>";
-        }
-        // Time rows
-        for (var h = startHour; h < endHour; h++) {
-          var label = (h <= 12 ? h : h - 12) + ":00 " + (h < 12 ? "AM" : "PM");
-          html += '<div class="week-time-label">' + label + "</div>";
-          for (var d = 0; d < 7; d++) {
-            html +=
-              '<div class="week-day-column" data-day="' +
-              d +
-              '" data-hour="' +
-              h +
-              '"></div>';
-          }
-        }
-        html += "</div>";
-        container.innerHTML = html;
-        positionWeekExams(ws, startHour, endHour, hourHeight);
-      }
-      function parseTimeToMinutesClient(timeStr) {
-        if (!timeStr) return 0;
-        var parts = timeStr.split(":");
-        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-      }
-      function positionWeekExams(weekStart, startHour, endHour, hourHeight) {
-        var startMinutes = startHour * 60;
-        var endMinutes = endHour * 60;
-        for (var d = 0; d < 7; d++) {
-          var day = new Date(weekStart);
-          day.setDate(day.getDate() + d);
-          var dayStr = dateToString(day);
-          var dayExams = getExamsForDate(dayStr);
+        var dayExams = getExamsForDate(dateStr);
+        var popup = document.getElementById("day-summary-popup");
+        var title = document.getElementById("day-summary-title");
+        var list = document.getElementById("day-summary-list");
+        title.textContent = formatDate(dateStr);
+        if (dayExams.length === 0) {
+          list.innerHTML = '<p style="color:#888; text-align:center; padding:1rem;">No exams scheduled.</p>';
+        } else {
+          var html = '';
           dayExams.forEach(function (ex) {
-            var exStart = parseTimeToMinutesClient(ex.time);
-            var exEnd = parseTimeToMinutesClient(ex.endTime);
-            if (exEnd <= startMinutes || exStart >= endMinutes) return;
-            exStart = Math.max(exStart, startMinutes);
-            exEnd = Math.min(exEnd, endMinutes);
-            var topPx = ((exStart - startMinutes) / 60) * hourHeight;
-            var heightPx = Math.max(((exEnd - exStart) / 60) * hourHeight, 18);
             var color = getVenueColor(ex.venue);
-            var cells = document.querySelectorAll(
-              '.week-day-column[data-day="' + d + '"]',
-            );
-            if (cells.length === 0) return;
-            var firstCell = cells[0];
-            var parentGrid = firstCell.parentElement;
-            var block = document.createElement("div");
-            block.className = "week-exam-block";
-            block.style.backgroundColor = color;
-            block.title =
-              escapeHtml(ex.name) + "\n" + ex.time + " - " + (ex.endTime || "");
-            block.onclick = (function (id) {
-              return function () {
-                showExamPopup(id);
-              };
-            })(ex.id);
-            var cellRect = firstCell.getBoundingClientRect();
-            var gridRect = parentGrid.getBoundingClientRect();
-            var cellLeft = cellRect.left - gridRect.left;
-            var cellTop = cellRect.top - gridRect.top;
-            block.style.position = "absolute";
-            block.style.top = cellTop + topPx + "px";
-            block.style.left = cellLeft + 2 + "px";
-            block.style.width = cellRect.width - 4 + "px";
-            block.style.height = heightPx + "px";
-            block.innerHTML = "<strong>" + escapeHtml(ex.name) + "</strong>";
-            if (heightPx > 30) {
-              block.innerHTML += "<br>" + ex.time + " - " + (ex.endTime || "");
-            }
-            parentGrid.style.position = "relative";
-            parentGrid.appendChild(block);
+            html += '<div style="padding:0.5rem 0; border-bottom:1px solid #f0f0f0; cursor:pointer;" onclick="closeDaySummary(); showExamPopup(' + ex.id + ')">';
+            html += '<span style="display:inline-block; width:10px; height:10px; border-radius:3px; background-color:' + color + '; margin-right:0.5rem;"></span>';
+            html += '<strong>' + escapeHtml(ex.name) + '</strong>';
+            html += '<span style="color:#666; margin-left:0.5rem;">' + ex.time + ' - ' + (ex.endTime || 'N/A') + '</span>';
+            html += '<span style="color:#888; margin-left:0.5rem; font-size:0.85rem;">' + escapeHtml(ex.venue) + '</span>';
+            html += '</div>';
           });
+          list.innerHTML = html;
         }
+        popup.style.display = "flex";
+      }
+      function closeDaySummary() {
+        document.getElementById("day-summary-popup").style.display = "none";
       }
       function showExamPopup(examId) {
         calendarState.selectedExamId = examId;
@@ -2305,6 +1966,12 @@
       function closeExamPopup() {
         document.getElementById("exam-popup").style.display = "none";
         calendarState.selectedExamId = null;
+      }
+      function deleteExamFromPopup() {
+        var examId = calendarState.selectedExamId;
+        if (!examId) return;
+        closeExamPopup();
+        deleteExam(examId);
       }
       function editExamFromPopup() {
         var exam = exams.find(function (e) {
@@ -2329,15 +1996,23 @@
         document.querySelector('[data-tab="schedule"]').classList.add("active");
         document.getElementById("schedule").classList.add("active");
       }
-      // Close popup on overlay click
+      // Close popups on overlay click
       document
         .getElementById("exam-popup")
         .addEventListener("click", function (e) {
           if (e.target === this) closeExamPopup();
         });
+      document
+        .getElementById("day-summary-popup")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeDaySummary();
+        });
       // Close popup on Escape key
       document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") closeExamPopup();
+        if (e.key === "Escape") {
+          closeExamPopup();
+          closeDaySummary();
+        }
       });
       // Initialize on page load
       loadExams();
