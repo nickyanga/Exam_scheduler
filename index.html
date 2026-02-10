@@ -1,0 +1,2352 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exam Scheduler</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+          sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+      header {
+        background-color: #2c3e50;
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      header h1 {
+        font-size: 1.8rem;
+      }
+      .container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      .tabs {
+        display: flex;
+        border-bottom: 2px solid #ddd;
+        background-color: white;
+        border-radius: 8px 8px 0 0;
+      }
+      .tab-button {
+        flex: 1;
+        padding: 1rem;
+        border: none;
+        background-color: transparent;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #666;
+        transition: all 0.3s ease;
+      }
+      .tab-button:hover {
+        background-color: #f0f0f0;
+      }
+      .tab-button.active {
+        color: #3498db;
+        border-bottom: 3px solid #3498db;
+        margin-bottom: -2px;
+      }
+      .tab-content {
+        display: none;
+        background-color: white;
+        padding: 2rem;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #444;
+      }
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+      }
+      .form-group input:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      }
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      .btn-primary {
+        background-color: #3498db;
+        color: white;
+      }
+      .btn-primary:hover {
+        background-color: #2980b9;
+      }
+      .btn-danger {
+        background-color: #e74c3c;
+        color: white;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+      }
+      .btn-danger:hover {
+        background-color: #c0392b;
+      }
+      .delete-all-container {
+        margin-top: 1.5rem;
+        text-align: center;
+        padding: 1rem;
+        border-top: 1px solid #e0e0e0;
+      }
+      .delete-all-container .btn {
+        padding: 0.75rem 2rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .exam-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      .exam-table th,
+      .exam-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+      .exam-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+      }
+      .exam-table tr:hover {
+        background-color: #f5f5f5;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+      .stat-card {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+      }
+      .stat-card h3 {
+        font-size: 2rem;
+        color: #3498db;
+        margin-bottom: 0.5rem;
+      }
+      .stat-card p {
+        color: #666;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #888;
+      }
+      .loading {
+        text-align: center;
+        padding: 2rem;
+        color: #888;
+      }
+      .alert {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 4px;
+      }
+      .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .alert-clash {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 2px solid #ffc107;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .alert-clash strong {
+        color: #d39e00;
+      }
+      .spreadsheet-link {
+        margin-top: 1rem;
+        text-align: center;
+      }
+      .spreadsheet-link a {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: 500;
+      }
+      .spreadsheet-link a:hover {
+        text-decoration: underline;
+      }
+      /* Bulk Upload Styles */
+      .upload-divider {
+        display: flex;
+        align-items: center;
+        margin: 2rem 0;
+        color: #888;
+      }
+      .upload-divider::before,
+      .upload-divider::after {
+        content: "";
+        flex: 1;
+        border-bottom: 1px solid #ddd;
+      }
+      .upload-divider span {
+        padding: 0 1rem;
+        font-weight: 500;
+      }
+      .bulk-upload-section {
+        margin-top: 1rem;
+      }
+      .bulk-upload-section h3 {
+        margin-bottom: 1rem;
+        color: #444;
+      }
+      .drop-zone {
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background-color: #fafafa;
+      }
+      .drop-zone:hover,
+      .drop-zone.drag-over {
+        border-color: #3498db;
+        background-color: #f0f8ff;
+      }
+      .drop-zone p {
+        margin: 0.5rem 0;
+        color: #666;
+      }
+      .drop-zone .icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+      .file-input {
+        display: none;
+      }
+      .upload-info {
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        color: #666;
+      }
+      .upload-info strong {
+        color: #333;
+      }
+      .preview-section {
+        margin-top: 1.5rem;
+        display: none;
+      }
+      .preview-section.active {
+        display: block;
+      }
+      .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      .preview-header h4 {
+        margin: 0;
+        color: #333;
+      }
+      .preview-summary {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .summary-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+      .summary-badge.total {
+        background-color: #e3f2fd;
+        color: #1565c0;
+      }
+      .summary-badge.valid {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+      }
+      .summary-badge.clash {
+        background-color: #fff3e0;
+        color: #ef6c00;
+      }
+      .summary-badge.error {
+        background-color: #ffebee;
+        color: #c62828;
+      }
+      .preview-table-container {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+      }
+      .preview-table th,
+      .preview-table td {
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+      .preview-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      .preview-table tr.status-ok {
+        background-color: #e8f5e9;
+      }
+      .preview-table tr.status-clash {
+        background-color: #fff3e0;
+      }
+      .preview-table tr.status-error {
+        background-color: #ffebee;
+      }
+      .status-cell {
+        font-weight: 500;
+      }
+      .status-cell.ok {
+        color: #2e7d32;
+      }
+      .status-cell.clash {
+        color: #ef6c00;
+      }
+      .status-cell.error {
+        color: #c62828;
+      }
+      .status-details {
+        font-size: 0.75rem;
+        color: #666;
+        margin-top: 0.25rem;
+      }
+      .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+      }
+      .btn-secondary:hover {
+        background-color: #7f8c8d;
+      }
+      .btn-success {
+        background-color: #27ae60;
+        color: white;
+      }
+      .btn-success:hover {
+        background-color: #219a52;
+      }
+      .btn-warning {
+        background-color: #f39c12;
+        color: white;
+      }
+      .btn-warning:hover {
+        background-color: #d68910;
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      /* Calendar Controls */
+      .calendar-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .calendar-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .calendar-nav-btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.9rem;
+      }
+      .calendar-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+      }
+      .calendar-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .view-toggle {
+        display: flex;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .view-toggle-btn {
+        padding: 0.4rem 1rem;
+        border-radius: 0;
+        background-color: white;
+        color: #333;
+        border: none;
+        border-right: 1px solid #ddd;
+        font-size: 0.875rem;
+      }
+      .view-toggle-btn:last-child {
+        border-right: none;
+      }
+      .view-toggle-btn.active {
+        background-color: #3498db;
+        color: white;
+      }
+      /* Venue Legend */
+      .venue-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+        color: #555;
+      }
+      .legend-swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+      /* Calendar View Toggle */
+      .calendar-view {
+        display: none;
+      }
+      .calendar-view.active {
+        display: block;
+      }
+      /* Month Grid */
+      .month-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .month-header-cell {
+        background-color: #f8f9fa;
+        padding: 0.5rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: #555;
+        border-bottom: 1px solid #ddd;
+      }
+      .month-day {
+        min-height: 100px;
+        padding: 0.35rem;
+        border-right: 1px solid #eee;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+      }
+      .month-day:nth-child(7n) {
+        border-right: none;
+      }
+      .month-day:hover {
+        background-color: #f0f8ff;
+      }
+      .month-day.other-month {
+        background-color: #fafafa;
+        color: #bbb;
+      }
+      .month-day.today {
+        background-color: #fffde7;
+      }
+      .month-day-number {
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        color: inherit;
+      }
+      .exam-badge {
+        display: block;
+        padding: 2px 4px;
+        margin-bottom: 2px;
+        border-radius: 3px;
+        font-size: 0.65rem;
+        color: white;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+      }
+      .exam-badge:hover {
+        opacity: 0.85;
+      }
+      .more-badge {
+        font-size: 0.65rem;
+        color: #666;
+        padding: 1px 4px;
+        cursor: pointer;
+      }
+      .more-badge:hover {
+        color: #333;
+      }
+      /* Week Grid */
+      .week-grid {
+        display: grid;
+        grid-template-columns: 60px repeat(7, 1fr);
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .week-header-cell {
+        background-color: #f8f9fa;
+        padding: 0.5rem 0.25rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: #555;
+        border-bottom: 1px solid #ddd;
+        border-right: 1px solid #eee;
+      }
+      .week-header-cell:last-child {
+        border-right: none;
+      }
+      .week-header-cell.today {
+        background-color: #e3f2fd;
+        color: #1565c0;
+      }
+      .week-time-label {
+        padding: 0.25rem;
+        font-size: 0.7rem;
+        color: #888;
+        text-align: right;
+        border-right: 1px solid #ddd;
+        border-bottom: 1px solid #eee;
+        height: 60px;
+      }
+      .week-day-column {
+        position: relative;
+        border-right: 1px solid #eee;
+        border-bottom: 1px solid #eee;
+        height: 60px;
+      }
+      .week-day-column:last-child {
+        border-right: none;
+      }
+      .week-exam-block {
+        position: absolute;
+        left: 2px;
+        right: 2px;
+        border-radius: 3px;
+        padding: 2px 4px;
+        font-size: 0.65rem;
+        color: white;
+        overflow: hidden;
+        cursor: pointer;
+        z-index: 1;
+        line-height: 1.2;
+      }
+      .week-exam-block:hover {
+        opacity: 0.85;
+        z-index: 2;
+      }
+      /* Exam Popup */
+      .exam-popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .exam-popup-card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        max-width: 400px;
+        width: 90%;
+        position: relative;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      }
+      .popup-close {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #888;
+        line-height: 1;
+      }
+      .popup-close:hover {
+        color: #333;
+      }
+      .exam-popup-card h3 {
+        margin-bottom: 1rem;
+        padding-right: 2rem;
+        color: #333;
+      }
+      .popup-details {
+        margin-bottom: 1.25rem;
+      }
+      .popup-row {
+        display: flex;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .popup-label {
+        font-weight: 500;
+        color: #666;
+        width: 140px;
+        flex-shrink: 0;
+      }
+      .popup-actions {
+        display: flex;
+        gap: 0.75rem;
+      }
+      /* Responsive */
+      @media (max-width: 600px) {
+        .calendar-controls {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .month-day {
+          min-height: 60px;
+          padding: 0.2rem;
+        }
+        .month-day-number {
+          font-size: 0.7rem;
+        }
+        .exam-badge {
+          font-size: 0.55rem;
+        }
+        .week-grid {
+          grid-template-columns: 40px repeat(7, 1fr);
+        }
+        .week-time-label {
+          font-size: 0.6rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Exam Scheduler</h1>
+    </header>
+    <div class="container">
+      <div class="tabs">
+        <button class="tab-button" data-tab="checkvenue">
+          Check Exam Venue
+        </button>
+        <button class="tab-button active" data-tab="schedule">
+          Schedule Exam
+        </button>
+        <button class="tab-button" data-tab="view">View Scheduled Exams</button>
+        <button class="tab-button" data-tab="calendar">Calendar View</button>
+      </div>
+      <!-- Tab 1: Schedule Exam -->
+      <div id="schedule" class="tab-content active">
+        <h2>Schedule New Exam</h2>
+        <div id="schedule-alert"></div>
+        <form id="exam-form">
+          <div class="form-group">
+            <label for="exam-name">Subject</label>
+            <input
+              type="text"
+              id="exam-name"
+              name="examName"
+              placeholder="Enter subject"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="exam-date">Date</label>
+            <input type="date" id="exam-date" name="examDate" required />
+          </div>
+          <div class="form-group">
+            <label for="exam-time">Start Time</label>
+            <input type="time" id="exam-time" name="examTime" required />
+          </div>
+          <div class="form-group">
+            <label for="exam-end-time">End Time</label>
+            <input type="time" id="exam-end-time" name="examEndTime" required />
+          </div>
+          <div class="form-group">
+            <label for="venue">Venue</label>
+            <select id="venue" name="venue" required>
+              <option value="">Select venue</option>
+              <option value="Learning Hive 1">Learning Hive 1</option>
+              <option value="Learning Hive 2">Learning Hive 2</option>
+              <option value="Learning Hive 3">Learning Hive 3</option>
+              <option value="Learning Hive 4">Learning Hive 4</option>
+              <option value="Hall">Hall</option>
+              <option value="Design Studio B">Design Studio B</option>
+              <option value="Design Studio C">Design Studio C</option>
+              <option value="Com Lab 1A">Com Lab 1A</option>
+              <option value="Com Lab 1B">Com Lab 1B</option>
+              <option value="Com Lab 1">Com Lab 1</option>
+              <option value="Com Lab 2A">Com Lab 2A</option>
+              <option value="Com Lab 2B">Com Lab 2B</option>
+              <option value="Com Lab 2">Com Lab 2</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="class">Teaching Group</label>
+            <input
+              type="text"
+              id="class"
+              name="class"
+              placeholder="Enter teaching group"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="laptop-needed">Laptops/Candidate</label>
+            <input
+              type="number"
+              id="laptop-needed"
+              name="laptopsNeeded"
+              placeholder="Enter laptops per candidate"
+              min="0"
+              value="0"
+            />
+          </div>
+          <button type="submit" class="btn btn-primary">Schedule Exam</button>
+        </form>
+        <!-- Bulk Upload Section -->
+        <div class="upload-divider">
+          <span>OR BULK UPLOAD</span>
+        </div>
+        <div class="bulk-upload-section">
+          <h3>Upload Excel/CSV File</h3>
+          <div class="drop-zone" id="drop-zone">
+            <div class="icon">📁</div>
+            <p><strong>Drop file here</strong> or click to browse</p>
+            <p>Accepts .xlsx and .csv files (max 50 exams)</p>
+          </div>
+          <input
+            type="file"
+            id="file-input"
+            class="file-input"
+            accept=".xlsx,.csv"
+          />
+          <div class="upload-info">
+            <strong>Expected columns:</strong> subject, date, start time, end
+            time, venue, teaching group, laptops/candidate (optional)<br />
+            <strong>Note:</strong> Old column names (Exam Name, Class, Laptops
+            Needed) are still supported<br />
+            <strong>Time format:</strong> 12-hour (e.g., "9:00 AM", "2:30 PM")
+            or 24-hour (e.g., "14:30")<br />
+            <strong>Date format:</strong> YYYY-MM-DD, MM/DD/YYYY, or DD/MM/YYYY
+          </div>
+          <div id="bulk-alert"></div>
+          <div class="preview-section" id="preview-section">
+            <div class="preview-header">
+              <h4>Preview</h4>
+              <button class="btn btn-secondary" onclick="clearBulkUpload()">
+                Clear
+              </button>
+            </div>
+            <div class="preview-summary" id="preview-summary"></div>
+            <div class="preview-table-container">
+              <table class="preview-table">
+                <thead>
+                  <tr>
+                    <th>Row</th>
+                    <th>Status</th>
+                    <th>Subject</th>
+                    <th>Date</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Venue</th>
+                    <th>Teaching Group</th>
+                    <th>Laptops/Cand</th>
+                  </tr>
+                </thead>
+                <tbody id="preview-body"></tbody>
+              </table>
+            </div>
+            <div class="action-buttons" id="action-buttons">
+              <button
+                class="btn btn-warning"
+                id="validate-btn"
+                onclick="validateBulkUpload()"
+              >
+                Validate Against Database
+              </button>
+              <button
+                class="btn btn-success"
+                id="schedule-btn"
+                onclick="scheduleAllValid()"
+                disabled
+              >
+                Schedule Valid Exams
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="spreadsheet-link">
+          <a href="#" id="view-spreadsheet" target="_blank"
+            >View Data Spreadsheet</a
+          >
+        </div>
+      </div>
+      <!-- Tab 2: View Scheduled Exams -->
+      <div id="view" class="tab-content">
+        <h2>Scheduled Exams</h2>
+        <div id="view-alert"></div>
+        <div class="loading" id="loading-exams">Loading exams...</div>
+        <table class="exam-table" style="display: none" id="exam-table">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Date</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+              <th>Venue</th>
+              <th>Teaching Group</th>
+              <th>Laptops/Cand</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="exam-list"></tbody>
+        </table>
+        <!-- Delete All Button Container -->
+        <div
+          id="delete-all-container"
+          class="delete-all-container"
+          style="display: none"
+        >
+          <button
+            id="delete-all-btn"
+            class="btn btn-danger"
+            onclick="deleteAllExams()"
+          >
+            Delete All Exams
+          </button>
+        </div>
+      </div>
+      <!-- Tab 3: Calendar View -->
+      <div id="calendar" class="tab-content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3 id="total-exams">0</h3>
+            <p>Total Exams</p>
+          </div>
+          <div class="stat-card">
+            <h3 id="upcoming-exams">0</h3>
+            <p>Upcoming Exams</p>
+          </div>
+        </div>
+        <div class="calendar-controls">
+          <div class="calendar-nav">
+            <button
+              class="btn btn-secondary calendar-nav-btn"
+              id="cal-prev"
+              onclick="navigatePrevious()"
+            >
+              &lt;
+            </button>
+            <button
+              class="btn btn-secondary calendar-nav-btn"
+              id="cal-next"
+              onclick="navigateNext()"
+            >
+              &gt;
+            </button>
+            <span class="calendar-title" id="calendar-title"></span>
+          </div>
+          <div class="calendar-actions">
+            <button
+              class="btn btn-secondary calendar-nav-btn"
+              id="cal-today"
+              onclick="navigateToday()"
+            >
+              Today
+            </button>
+            <div class="view-toggle">
+              <button
+                class="btn view-toggle-btn active"
+                id="btn-month"
+                onclick="switchCalendarView('month')"
+              >
+                Month
+              </button>
+              <button
+                class="btn view-toggle-btn"
+                id="btn-week"
+                onclick="switchCalendarView('week')"
+              >
+                Week
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="venue-legend" id="venue-legend"></div>
+        <div id="month-view" class="calendar-view active"></div>
+        <div id="week-view" class="calendar-view"></div>
+        <!-- Exam popup overlay -->
+        <div class="exam-popup-overlay" id="exam-popup" style="display: none">
+          <div class="exam-popup-card">
+            <button class="popup-close" onclick="closeExamPopup()">
+              &times;
+            </button>
+            <h3 id="popup-title"></h3>
+            <div class="popup-details">
+              <div class="popup-row">
+                <span class="popup-label">Date</span
+                ><span id="popup-date"></span>
+              </div>
+              <div class="popup-row">
+                <span class="popup-label">Time</span
+                ><span id="popup-time"></span>
+              </div>
+              <div class="popup-row">
+                <span class="popup-label">Venue</span
+                ><span id="popup-venue"></span>
+              </div>
+              <div class="popup-row">
+                <span class="popup-label">Teaching Group</span
+                ><span id="popup-class"></span>
+              </div>
+              <div class="popup-row">
+                <span class="popup-label">Laptops/Candidate</span
+                ><span id="popup-laptops"></span>
+              </div>
+            </div>
+            <div class="popup-actions">
+              <button class="btn btn-primary" onclick="editExamFromPopup()">
+                Edit Exam
+              </button>
+              <button class="btn btn-secondary" onclick="closeExamPopup()">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Tab 4: Check Exam Venue (replaces old Check Availability) -->
+      <div id="checkvenue" class="tab-content">
+        <h2>Check Exam Venue</h2>
+
+        <button
+          class="btn btn-primary"
+          onclick="
+            window.open(
+              'https://script.google.com/macros/s/AKfycbxQRFfQQxFscPk1sl23wqVcvktRKYUmFqp20OTdcx4_UjuldiXuM5sF1aS4SUUW5QmoRA/exec',
+              '_blank',
+            )
+          "
+        >
+          Open Check Exam Venue Tool
+        </button>
+      </div>
+    </div>
+    <!-- SheetJS library for Excel/CSV parsing -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script>
+      let exams = [];
+      // Bulk upload state
+      let bulkUploadData = [];
+      let validationResults = null;
+      // Tab switching functionality
+      document.querySelectorAll(".tab-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab-button")
+            .forEach((btn) => btn.classList.remove("active"));
+          document
+            .querySelectorAll(".tab-content")
+            .forEach((content) => content.classList.remove("active"));
+          button.classList.add("active");
+          document.getElementById(button.dataset.tab).classList.add("active");
+          // Reload exams when viewing exams tab
+          if (button.dataset.tab === "view") {
+            loadExams();
+          }
+          // Initialize calendar when switching to calendar tab
+          if (button.dataset.tab === "calendar") {
+            if (exams.length === 0) {
+              loadExams();
+            } else {
+              renderCalendar();
+            }
+            initCalendar();
+          }
+        });
+      });
+      // Show alert message
+      function showAlert(elementId, message, isError = false) {
+        const alertDiv = document.getElementById(elementId);
+        alertDiv.innerHTML = `<div class="alert ${isError ? "alert-error" : "alert-success"}">${message}</div>`;
+        setTimeout(() => {
+          alertDiv.innerHTML = "";
+        }, 5000);
+      }
+      // Show clash alert with detailed information
+      function showClashAlert(elementId, message, clashes) {
+        const alertDiv = document.getElementById(elementId);
+        let html = '<div class="alert alert-clash">';
+        html += "<strong>⚠️ VENUE CLASH DETECTED!</strong><br><br>";
+        if (clashes && clashes.length > 0) {
+          html += '<div style="text-align: left; margin-top: 10px;">';
+          html += "<strong>This venue is already booked for:</strong><br><br>";
+          clashes.forEach((clash) => {
+            html +=
+              '<div style="background: rgba(255,255,255,0.2); padding: 10px; margin-bottom: 10px; border-radius: 4px;">';
+            html += "📚 <strong>" + clash.examName + "</strong><br>";
+            html += "📅 Date: " + formatDate(clash.date) + "<br>";
+            html +=
+              "⏰ Time: " +
+              clash.time +
+              " - " +
+              (clash.endTime || "N/A") +
+              "<br>";
+            html += "👥 Class: " + clash.class;
+            html += "</div>";
+          });
+          html += "</div>";
+          html += "<br>";
+          html +=
+            "<strong>Please choose a different venue, date, or time that doesn't overlap with existing bookings.</strong>";
+        } else {
+          html += message.replace(/\n/g, "<br>");
+        }
+        html += "</div>";
+        alertDiv.innerHTML = html;
+      }
+      // Form submission
+      document.getElementById("exam-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const startTime = formData.get("examTime");
+        const endTime = formData.get("examEndTime");
+        // Client-side validation: end time must be after start time
+        if (endTime <= startTime) {
+          showAlert(
+            "schedule-alert",
+            "End time must be after start time",
+            true,
+          );
+          return;
+        }
+        const exam = {
+          name: formData.get("examName"),
+          date: formData.get("examDate"),
+          time: startTime,
+          endTime: endTime,
+          venue: formData.get("venue"),
+          class: formData.get("class"),
+          laptopsNeeded: parseInt(formData.get("laptopsNeeded")) || 0,
+        };
+        // Show loading state
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = "Checking for clashes...";
+        submitBtn.disabled = true;
+        // Call Google Apps Script function
+        google.script.run
+          .withSuccessHandler((response) => {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+            if (response.success) {
+              e.target.reset();
+              showAlert("schedule-alert", response.message, false);
+              loadExams();
+            } else if (response.clash) {
+              // Clash detected - show detailed warning
+              showClashAlert(
+                "schedule-alert",
+                response.message,
+                response.clashes,
+              );
+            } else {
+              showAlert("schedule-alert", response.message, true);
+            }
+          })
+          .withFailureHandler((error) => {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+            showAlert("schedule-alert", "Error: " + error.message, true);
+          })
+          .saveExam(exam);
+      });
+      // Load exams from server
+      function loadExams() {
+        console.log("=== loadExams called ===");
+        const loadingDiv = document.getElementById("loading-exams");
+        const tableDiv = document.getElementById("exam-table");
+        loadingDiv.style.display = "block";
+        tableDiv.style.display = "none";
+        console.log("Calling google.script.run.getExams()...");
+        google.script.run
+          .withSuccessHandler((serverExams) => {
+            console.log("=== SUCCESS HANDLER CALLED ===");
+            console.log("Raw response:", serverExams);
+            console.log("Type of serverExams:", typeof serverExams);
+            console.log("Is array:", Array.isArray(serverExams));
+            console.log("Is null:", serverExams === null);
+            console.log("Is undefined:", serverExams === undefined);
+            // Handle null or undefined response
+            if (serverExams === null) {
+              console.error("ERROR: serverExams is explicitly null!");
+              loadingDiv.innerHTML =
+                '<p class="empty-state" style="color: red;">Error: getExams() returned null. Check execution logs in Apps Script.</p>';
+              showAlert(
+                "view-alert",
+                "Unable to load exams. The server returned null.",
+                true,
+              );
+              return;
+            }
+            if (serverExams === undefined) {
+              console.error("ERROR: serverExams is undefined!");
+              loadingDiv.innerHTML =
+                '<p class="empty-state" style="color: red;">Error: getExams() returned undefined. Check execution logs in Apps Script.</p>';
+              showAlert(
+                "view-alert",
+                "Unable to load exams. The server returned undefined.",
+                true,
+              );
+              return;
+            }
+            // Ensure it's an array
+            if (!Array.isArray(serverExams)) {
+              console.error("ERROR: serverExams is not an array:", serverExams);
+              console.log("Attempting to convert to array...");
+              exams = [];
+            } else {
+              console.log(
+                "SUCCESS: serverExams is a valid array with " +
+                  serverExams.length +
+                  " items",
+              );
+              exams = serverExams;
+            }
+            loadingDiv.style.display = "none";
+            tableDiv.style.display = "table";
+            updateExamList();
+            updateStats();
+            // Refresh calendar if it's the active tab
+            if (
+              document.getElementById("calendar").classList.contains("active")
+            ) {
+              renderCalendar();
+            }
+            console.log("=== loadExams completed ===");
+          })
+          .withFailureHandler((error) => {
+            console.error("=== FAILURE HANDLER CALLED ===");
+            console.error("Error object:", error);
+            console.error("Error message:", error.message);
+            console.error("Error stack:", error.stack);
+            loadingDiv.innerHTML =
+              '<p class="empty-state" style="color: red;">Error loading exams: ' +
+              error.message +
+              "</p>";
+            showAlert(
+              "view-alert",
+              "Failed to load exams: " + error.message,
+              true,
+            );
+          })
+          .getExams();
+      }
+      // Update exam list in table
+      function updateExamList() {
+        const tbody = document.getElementById("exam-list");
+        const deleteAllContainer = document.getElementById(
+          "delete-all-container",
+        );
+        if (exams.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="8" class="empty-state">No exams scheduled yet</td></tr>';
+          // Hide delete all button when no exams exist
+          if (deleteAllContainer) {
+            deleteAllContainer.style.display = "none";
+          }
+          return;
+        }
+        tbody.innerHTML = exams
+          .map(
+            (exam) => `
+                <tr>
+                    <td>${exam.name}</td>
+                    <td>${formatDate(exam.date)}</td>
+                    <td>${exam.time}</td>
+                    <td>${exam.endTime || ""}</td>
+                    <td>${exam.venue}</td>
+                    <td>${exam.class}</td>
+                    <td>${exam.laptopsNeeded}</td>
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteExam(${exam.id})">Delete</button>
+                    </td>
+                </tr>
+            `,
+          )
+          .join("");
+        // Show delete all button when exams exist
+        if (deleteAllContainer) {
+          deleteAllContainer.style.display = "block";
+        }
+      }
+      // Format date for display
+      function formatDate(dateValue) {
+        if (!dateValue) return "";
+        console.log("Formatting date:", dateValue, "Type:", typeof dateValue); // Debug log
+        // If it's already a formatted string (YYYY-MM-DD), parse it
+        if (typeof dateValue === "string") {
+          // Check if it's already in a readable format
+          if (dateValue.includes("-")) {
+            const parts = dateValue.split("-");
+            if (parts.length === 3) {
+              const date = new Date(dateValue + "T00:00:00");
+              if (!isNaN(date.getTime())) {
+                return date.toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                });
+              }
+            }
+          }
+          return dateValue;
+        }
+        // Handle Date object
+        const date = new Date(dateValue);
+        if (isNaN(date.getTime())) return String(dateValue);
+        return date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      }
+      // Delete exam
+      function deleteExam(examId) {
+        if (!confirm("Are you sure you want to delete this exam?")) {
+          return;
+        }
+        google.script.run
+          .withSuccessHandler((response) => {
+            if (response.success) {
+              showAlert("view-alert", response.message, false);
+              loadExams();
+            } else {
+              showAlert("view-alert", response.message, true);
+            }
+          })
+          .withFailureHandler((error) => {
+            showAlert("view-alert", "Error: " + error.message, true);
+          })
+          .deleteExam(examId);
+      }
+      // Delete all exams with confirmation
+      function deleteAllExams() {
+        // Strong confirmation message emphasizing irreversibility
+        if (
+          !confirm(
+            "⚠️ WARNING: This will permanently delete ALL scheduled exams.\n\nThis action cannot be undone.\n\nAre you sure you want to continue?",
+          )
+        ) {
+          return;
+        }
+        // Disable the button during operation to prevent double-clicks
+        const deleteAllBtn = document.getElementById("delete-all-btn");
+        const originalText = deleteAllBtn.textContent;
+        deleteAllBtn.textContent = "Deleting...";
+        deleteAllBtn.disabled = true;
+        google.script.run
+          .withSuccessHandler((response) => {
+            // Re-enable button
+            deleteAllBtn.textContent = originalText;
+            deleteAllBtn.disabled = false;
+            if (response.success) {
+              showAlert("view-alert", response.message, false);
+              loadExams(); // Refresh the table
+            } else {
+              showAlert("view-alert", response.message, true);
+            }
+          })
+          .withFailureHandler((error) => {
+            // Re-enable button on failure
+            deleteAllBtn.textContent = originalText;
+            deleteAllBtn.disabled = false;
+            showAlert("view-alert", "Error: " + error.message, true);
+          })
+          .deleteAllExams();
+      }
+      // Update statistics
+      function updateStats() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayString = today.toISOString().split("T")[0];
+        console.log("Today:", todayString); // Debug log
+        console.log("Exams for stats:", exams); // Debug log
+        const upcoming = exams.filter((exam) => {
+          let examDate = exam.date;
+          // Handle different date formats
+          if (typeof examDate === "string") {
+            // Already in YYYY-MM-DD format
+            return examDate >= todayString;
+          } else if (examDate instanceof Date) {
+            const examDateString = examDate.toISOString().split("T")[0];
+            return examDateString >= todayString;
+          }
+          return false;
+        }).length;
+        document.getElementById("total-exams").textContent = exams.length;
+        document.getElementById("upcoming-exams").textContent = upcoming;
+        console.log("Stats updated:", {
+          total: exams.length,
+          upcoming,
+        }); // Debug log
+      }
+      // Load spreadsheet URL
+      function loadSpreadsheetUrl() {
+        google.script.run
+          .withSuccessHandler((url) => {
+            document.getElementById("view-spreadsheet").href = url;
+          })
+          .getSpreadsheetUrl();
+      }
+      // ===== BULK UPLOAD FUNCTIONS =====
+      // Initialize bulk upload handlers
+      function initBulkUpload() {
+        const dropZone = document.getElementById("drop-zone");
+        const fileInput = document.getElementById("file-input");
+        // Click to browse
+        dropZone.addEventListener("click", () => fileInput.click());
+        // File input change
+        fileInput.addEventListener("change", (e) => {
+          if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+          }
+        });
+        // Drag and drop handlers
+        dropZone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dropZone.classList.add("drag-over");
+        });
+        dropZone.addEventListener("dragleave", (e) => {
+          e.preventDefault();
+          dropZone.classList.remove("drag-over");
+        });
+        dropZone.addEventListener("drop", (e) => {
+          e.preventDefault();
+          dropZone.classList.remove("drag-over");
+          if (e.dataTransfer.files.length > 0) {
+            handleFile(e.dataTransfer.files[0]);
+          }
+        });
+      }
+      // Handle uploaded file
+      function handleFile(file) {
+        console.log("Handling file:", file.name);
+        // Validate file type
+        const validTypes = [
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "text/csv",
+          "application/vnd.ms-excel",
+        ];
+        const isValidType =
+          validTypes.includes(file.type) ||
+          file.name.endsWith(".xlsx") ||
+          file.name.endsWith(".csv");
+        if (!isValidType) {
+          showAlert(
+            "bulk-alert",
+            "Invalid file type. Please upload an Excel (.xlsx) or CSV file.",
+            true,
+          );
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+            // Get first sheet
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            // Convert to JSON with headers
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+              header: 1,
+              raw: false,
+              dateNF: "yyyy-mm-dd",
+            });
+            console.log("Parsed data:", jsonData);
+            if (jsonData.length < 2) {
+              showAlert(
+                "bulk-alert",
+                "File appears to be empty or has only headers.",
+                true,
+              );
+              return;
+            }
+            parseUploadedData(jsonData);
+          } catch (error) {
+            console.error("Error parsing file:", error);
+            showAlert(
+              "bulk-alert",
+              "Error parsing file: " + error.message,
+              true,
+            );
+          }
+        };
+        reader.onerror = function () {
+          showAlert("bulk-alert", "Error reading file.", true);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+      // Parse uploaded data and map columns
+      function parseUploadedData(jsonData) {
+        const headers = jsonData[0].map((h) => {
+          if (!h) return "";
+          // Normalize: lowercase, remove spaces and special characters
+          return h
+            .toString()
+            .toLowerCase()
+            .trim()
+            .replace(/[\/\s-]+/g, "") // Remove slashes, spaces, hyphens
+            .replace(/[^a-z0-9]/g, ""); // Keep only alphanumeric
+        });
+        console.log("Headers found:", headers);
+        // Column mapping with alternate names (pre-normalized)
+        const columnMap = {
+          name: ["subject", "examname", "name", "exam", "title"],
+          date: ["date", "examdate"],
+          time: ["starttime", "time", "start"],
+          endTime: ["endtime", "end"],
+          venue: ["venue", "room", "location"],
+          class: ["teachinggroup", "class", "classname", "group"],
+          laptopsNeeded: [
+            "laptopscandidate",
+            "laptopsneeded",
+            "laptops",
+            "computers",
+            "laptop",
+          ],
+        };
+        // Find column indices
+        const indices = {};
+        for (const [field, aliases] of Object.entries(columnMap)) {
+          for (const alias of aliases) {
+            const idx = headers.indexOf(alias);
+            if (idx !== -1) {
+              indices[field] = idx;
+              break;
+            }
+          }
+        }
+        console.log("Column indices:", indices);
+        // Check required columns
+        const requiredFields = [
+          "name",
+          "date",
+          "time",
+          "endTime",
+          "venue",
+          "class",
+        ];
+        const missingFields = requiredFields.filter(
+          (f) => indices[f] === undefined,
+        );
+        if (missingFields.length > 0) {
+          showAlert(
+            "bulk-alert",
+            "Missing required columns: " +
+              missingFields.join(", ") +
+              ". Expected columns: subject, date, start time, end time, venue, teaching group (old names like 'Exam Name', 'Class' also work)",
+            true,
+          );
+          return;
+        }
+        // Parse data rows
+        bulkUploadData = [];
+        const dataRows = jsonData.slice(1);
+        // Check batch limit
+        if (dataRows.length > 50) {
+          showAlert(
+            "bulk-alert",
+            "Too many rows. Maximum 50 exams per upload. Found: " +
+              dataRows.length,
+            true,
+          );
+          return;
+        }
+        for (let i = 0; i < dataRows.length; i++) {
+          const row = dataRows[i];
+          // Skip completely empty rows
+          if (
+            !row ||
+            row.every((cell) => !cell || cell.toString().trim() === "")
+          ) {
+            continue;
+          }
+          const exam = {
+            rowIndex: i + 2, // Excel row number (1-based + header)
+            name: row[indices.name] ? row[indices.name].toString().trim() : "",
+            date: parseDate(row[indices.date]),
+            time: parseTime12To24(row[indices.time]),
+            endTime: parseTime12To24(row[indices.endTime]),
+            venue: row[indices.venue]
+              ? row[indices.venue].toString().trim()
+              : "",
+            class: row[indices.class]
+              ? row[indices.class].toString().trim()
+              : "",
+            laptopsNeeded:
+              indices.laptopsNeeded !== undefined
+                ? parseInt(row[indices.laptopsNeeded]) || 0
+                : 0,
+            // Client-side validation status
+            clientErrors: [],
+            status: "pending",
+          };
+          // Client-side validation
+          validateExamRow(exam);
+          bulkUploadData.push(exam);
+        }
+        console.log("Parsed exams:", bulkUploadData);
+        if (bulkUploadData.length === 0) {
+          showAlert("bulk-alert", "No valid data rows found in file.", true);
+          return;
+        }
+        // Reset validation results
+        validationResults = null;
+        // Display preview
+        displayPreviewTable();
+        showAlert(
+          "bulk-alert",
+          "Loaded " +
+            bulkUploadData.length +
+            " exam(s). Click 'Validate Against Database' to check for conflicts.",
+          false,
+        );
+      }
+      // Parse 12-hour time to 24-hour format (HH:MM)
+      function parseTime12To24(timeValue) {
+        if (!timeValue) return "";
+        const timeStr = timeValue.toString().trim();
+        // Already in 24-hour format (HH:MM)
+        if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+          const [hours, mins] = timeStr.split(":");
+          return hours.padStart(2, "0") + ":" + mins;
+        }
+        // 12-hour format with AM/PM
+        const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/i);
+        if (match) {
+          let hours = parseInt(match[1]);
+          const mins = match[2];
+          const period = match[3] ? match[3].toUpperCase() : null;
+          if (period === "PM" && hours !== 12) {
+            hours += 12;
+          } else if (period === "AM" && hours === 12) {
+            hours = 0;
+          }
+          return hours.toString().padStart(2, "0") + ":" + mins;
+        }
+        // Try to handle Excel decimal time (e.g., 0.5 = 12:00)
+        const numVal = parseFloat(timeStr);
+        if (!isNaN(numVal) && numVal >= 0 && numVal < 1) {
+          const totalMinutes = Math.round(numVal * 24 * 60);
+          const hours = Math.floor(totalMinutes / 60);
+          const mins = totalMinutes % 60;
+          return (
+            hours.toString().padStart(2, "0") +
+            ":" +
+            mins.toString().padStart(2, "0")
+          );
+        }
+        // Return as-is if can't parse
+        return timeStr;
+      }
+      // Parse date to YYYY-MM-DD format
+      function parseDate(dateValue) {
+        if (!dateValue) return "";
+        const dateStr = dateValue.toString().trim();
+        // Already in YYYY-MM-DD format
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          return dateStr;
+        }
+        // Try various date formats
+        let date = null;
+        // MM/DD/YYYY or DD/MM/YYYY
+        const slashMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (slashMatch) {
+          // Assume MM/DD/YYYY (US format)
+          const month = parseInt(slashMatch[1]);
+          const day = parseInt(slashMatch[2]);
+          const year = parseInt(slashMatch[3]);
+          // Basic validation - if month > 12, swap to DD/MM/YYYY
+          if (month > 12) {
+            date = new Date(year, day - 1, month);
+          } else {
+            date = new Date(year, month - 1, day);
+          }
+        }
+        // DD-MM-YYYY or MM-DD-YYYY
+        const dashMatch = dateStr.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+        if (!date && dashMatch) {
+          const first = parseInt(dashMatch[1]);
+          const second = parseInt(dashMatch[2]);
+          const year = parseInt(dashMatch[3]);
+          if (first > 12) {
+            date = new Date(year, second - 1, first);
+          } else {
+            date = new Date(year, first - 1, second);
+          }
+        }
+        // Excel serial date number
+        const numVal = parseFloat(dateStr);
+        if (!date && !isNaN(numVal) && numVal > 30000 && numVal < 60000) {
+          // Excel date serial (days since 1900-01-01, with bug for 1900 leap year)
+          date = new Date((numVal - 25569) * 86400 * 1000);
+        }
+        // Try native Date parsing
+        if (!date) {
+          date = new Date(dateStr);
+        }
+        if (date && !isNaN(date.getTime())) {
+          const year = date.getFullYear();
+          const month = (date.getMonth() + 1).toString().padStart(2, "0");
+          const day = date.getDate().toString().padStart(2, "0");
+          return `${year}-${month}-${day}`;
+        }
+        // Return as-is if can't parse
+        return dateStr;
+      }
+      // Client-side validation of exam row
+      function validateExamRow(exam) {
+        exam.clientErrors = [];
+        if (!exam.name) exam.clientErrors.push("Missing exam name");
+        if (!exam.date) exam.clientErrors.push("Missing date");
+        if (!exam.time) exam.clientErrors.push("Missing start time");
+        if (!exam.endTime) exam.clientErrors.push("Missing end time");
+        if (!exam.venue) exam.clientErrors.push("Missing venue");
+        if (!exam.class) exam.clientErrors.push("Missing class");
+        // Validate date format
+        if (exam.date && !/^\d{4}-\d{2}-\d{2}$/.test(exam.date)) {
+          exam.clientErrors.push("Invalid date format");
+        }
+        // Validate time format
+        if (exam.time && !/^\d{2}:\d{2}$/.test(exam.time)) {
+          exam.clientErrors.push("Invalid start time format");
+        }
+        if (exam.endTime && !/^\d{2}:\d{2}$/.test(exam.endTime)) {
+          exam.clientErrors.push("Invalid end time format");
+        }
+        // Check end time is after start time
+        if (exam.time && exam.endTime && exam.endTime <= exam.time) {
+          exam.clientErrors.push("End time must be after start time");
+        }
+        exam.status = exam.clientErrors.length > 0 ? "error" : "pending";
+      }
+      // Display preview table
+      function displayPreviewTable() {
+        const previewSection = document.getElementById("preview-section");
+        const previewBody = document.getElementById("preview-body");
+        const summaryDiv = document.getElementById("preview-summary");
+        previewSection.classList.add("active");
+        // Calculate summary
+        let validCount = 0;
+        let clashCount = 0;
+        let errorCount = 0;
+        bulkUploadData.forEach((exam) => {
+          if (exam.status === "ok" || exam.status === "valid") {
+            validCount++;
+          } else if (exam.status === "clash") {
+            clashCount++;
+          } else if (exam.status === "error") {
+            errorCount++;
+          } else {
+            // pending status - count errors from client validation
+            if (exam.clientErrors && exam.clientErrors.length > 0) {
+              errorCount++;
+            }
+          }
+        });
+        // Update summary badges
+        summaryDiv.innerHTML = `
+          <span class="summary-badge total">Total: ${bulkUploadData.length}</span>
+          <span class="summary-badge valid">Valid: ${validCount}</span>
+          <span class="summary-badge clash">Clashing: ${clashCount}</span>
+          <span class="summary-badge error">Errors: ${errorCount}</span>
+        `;
+        // Build table rows
+        let html = "";
+        bulkUploadData.forEach((exam, index) => {
+          let statusClass = "";
+          let statusText = "";
+          let statusDetails = "";
+          if (exam.status === "ok" || exam.status === "valid") {
+            statusClass = "status-ok";
+            statusText = '<span class="status-cell ok">OK</span>';
+          } else if (exam.status === "clash") {
+            statusClass = "status-clash";
+            statusText = '<span class="status-cell clash">CLASH</span>';
+            if (exam.clashDetails) {
+              statusDetails = `<div class="status-details">${exam.clashDetails}</div>`;
+            }
+          } else if (exam.status === "error") {
+            statusClass = "status-error";
+            statusText = '<span class="status-cell error">ERROR</span>';
+            if (exam.clientErrors && exam.clientErrors.length > 0) {
+              statusDetails = `<div class="status-details">${exam.clientErrors.join(", ")}</div>`;
+            } else if (exam.serverErrors && exam.serverErrors.length > 0) {
+              statusDetails = `<div class="status-details">${exam.serverErrors.join(", ")}</div>`;
+            }
+          } else {
+            statusText = '<span class="status-cell">PENDING</span>';
+            if (exam.clientErrors && exam.clientErrors.length > 0) {
+              statusClass = "status-error";
+              statusText = '<span class="status-cell error">ERROR</span>';
+              statusDetails = `<div class="status-details">${exam.clientErrors.join(", ")}</div>`;
+            }
+          }
+          html += `
+            <tr class="${statusClass}">
+              <td>${exam.rowIndex}</td>
+              <td>${statusText}${statusDetails}</td>
+              <td>${escapeHtml(exam.name)}</td>
+              <td>${exam.date}</td>
+              <td>${exam.time}</td>
+              <td>${exam.endTime}</td>
+              <td>${escapeHtml(exam.venue)}</td>
+              <td>${escapeHtml(exam.class)}</td>
+              <td>${exam.laptopsNeeded}</td>
+            </tr>
+          `;
+        });
+        previewBody.innerHTML = html;
+        // Update button states
+        updateActionButtons();
+      }
+      // Escape HTML to prevent XSS
+      function escapeHtml(text) {
+        if (!text) return "";
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+      // Update action button states
+      function updateActionButtons() {
+        const validateBtn = document.getElementById("validate-btn");
+        const scheduleBtn = document.getElementById("schedule-btn");
+        // Count valid exams after server validation
+        const validExams = bulkUploadData.filter(
+          (e) => e.status === "ok" || e.status === "valid",
+        );
+        if (validationResults) {
+          validateBtn.textContent = "Re-validate";
+          scheduleBtn.disabled = validExams.length === 0;
+          scheduleBtn.textContent = `Schedule ${validExams.length} Valid Exam${validExams.length !== 1 ? "s" : ""}`;
+        } else {
+          validateBtn.textContent = "Validate Against Database";
+          scheduleBtn.disabled = true;
+          scheduleBtn.textContent = "Schedule Valid Exams";
+        }
+      }
+      // Validate bulk upload against database
+      function validateBulkUpload() {
+        console.log("Validating bulk upload...");
+        const validateBtn = document.getElementById("validate-btn");
+        validateBtn.textContent = "Validating...";
+        validateBtn.disabled = true;
+        // Prepare data for server
+        const examDataArray = bulkUploadData
+          .filter((e) => e.clientErrors.length === 0)
+          .map((e) => ({
+            rowIndex: e.rowIndex,
+            name: e.name,
+            date: e.date,
+            time: e.time,
+            endTime: e.endTime,
+            venue: e.venue,
+            class: e.class,
+            laptopsNeeded: e.laptopsNeeded,
+          }));
+        if (examDataArray.length === 0) {
+          showAlert(
+            "bulk-alert",
+            "No valid exams to validate. Please fix errors first.",
+            true,
+          );
+          validateBtn.textContent = "Validate Against Database";
+          validateBtn.disabled = false;
+          return;
+        }
+        google.script.run
+          .withSuccessHandler((response) => {
+            console.log("Validation response:", response);
+            validateBtn.disabled = false;
+            handleValidationResults(response);
+          })
+          .withFailureHandler((error) => {
+            console.error("Validation error:", error);
+            validateBtn.textContent = "Validate Against Database";
+            validateBtn.disabled = false;
+            showAlert(
+              "bulk-alert",
+              "Error validating exams: " + error.message,
+              true,
+            );
+          })
+          .validateBulkExams(examDataArray);
+      }
+      // Handle validation results from server
+      function handleValidationResults(response) {
+        validationResults = response;
+        if (response.error) {
+          showAlert("bulk-alert", "Validation error: " + response.error, true);
+          return;
+        }
+        // Update exam statuses based on server validation
+        response.results.forEach((result) => {
+          const exam = bulkUploadData.find(
+            (e) => e.rowIndex === result.rowIndex,
+          );
+          if (exam) {
+            if (result.valid) {
+              exam.status = "ok";
+              exam.serverErrors = [];
+              exam.clashDetails = "";
+            } else if (result.errors && result.errors.length > 0) {
+              exam.status = "error";
+              exam.serverErrors = result.errors;
+            } else if (
+              result.clashesWithExisting.length > 0 ||
+              result.clashesWithBatch.length > 0
+            ) {
+              exam.status = "clash";
+              const clashNames = [
+                ...result.clashesWithExisting.map(
+                  (c) => c.examName + " (existing)",
+                ),
+                ...result.clashesWithBatch.map(
+                  (c) => c.examName + " (row " + c.rowIndex + ")",
+                ),
+              ];
+              exam.clashDetails = "Conflicts with: " + clashNames.join(", ");
+            }
+          }
+        });
+        // Refresh display
+        displayPreviewTable();
+        // Show summary
+        const summary = response.summary;
+        showAlert(
+          "bulk-alert",
+          `Validation complete: ${summary.validRows} valid, ${summary.clashingRows} clashing, ${summary.invalidRows} with errors`,
+          summary.validRows === 0,
+        );
+      }
+      // Schedule all valid exams
+      function scheduleAllValid() {
+        const validExams = bulkUploadData.filter(
+          (e) => e.status === "ok" || e.status === "valid",
+        );
+        if (validExams.length === 0) {
+          showAlert("bulk-alert", "No valid exams to schedule.", true);
+          return;
+        }
+        const scheduleBtn = document.getElementById("schedule-btn");
+        scheduleBtn.textContent = "Scheduling...";
+        scheduleBtn.disabled = true;
+        const examDataArray = validExams.map((e) => ({
+          name: e.name,
+          date: e.date,
+          time: e.time,
+          endTime: e.endTime,
+          venue: e.venue,
+          class: e.class,
+          laptopsNeeded: e.laptopsNeeded,
+        }));
+        google.script.run
+          .withSuccessHandler((response) => {
+            console.log("Save response:", response);
+            if (response.success) {
+              showAlert(
+                "bulk-alert",
+                `Successfully scheduled ${response.savedCount} exam(s)!`,
+                false,
+              );
+              // Clear the upload
+              setTimeout(() => {
+                clearBulkUpload();
+                loadExams(); // Refresh the exams list
+              }, 2000);
+            } else {
+              showAlert(
+                "bulk-alert",
+                "Error scheduling exams: " + (response.errors || []).join(", "),
+                true,
+              );
+              scheduleBtn.disabled = false;
+              updateActionButtons();
+            }
+          })
+          .withFailureHandler((error) => {
+            console.error("Save error:", error);
+            showAlert(
+              "bulk-alert",
+              "Error scheduling exams: " + error.message,
+              true,
+            );
+            scheduleBtn.disabled = false;
+            updateActionButtons();
+          })
+          .saveBulkExams(examDataArray);
+      }
+      // Clear bulk upload
+      function clearBulkUpload() {
+        bulkUploadData = [];
+        validationResults = null;
+        document.getElementById("preview-section").classList.remove("active");
+        document.getElementById("preview-body").innerHTML = "";
+        document.getElementById("preview-summary").innerHTML = "";
+        document.getElementById("file-input").value = "";
+        document.getElementById("bulk-alert").innerHTML = "";
+        updateActionButtons();
+      }
+      // ===== CALENDAR FUNCTIONS =====
+      var calendarState = {
+        currentView: "month",
+        currentDate: new Date(),
+        selectedExamId: null,
+      };
+      var calendarInitialized = false;
+      var VENUE_COLORS = {
+        "Learning Hive 1": "#e74c3c",
+        "Learning Hive 2": "#9b59b6",
+        "Learning Hive 3": "#3498db",
+        "Learning Hive 4": "#1abc9c",
+        Hall: "#e67e22",
+        "Design Studio B": "#d35400",
+        "Design Studio C": "#3a93c9",
+        "Com Lab 1A": "#27ae60",
+        "Com Lab 1B": "#16a085",
+        "Com Lab 1": "#2c3e50",
+        "Com Lab 2A": "#8e44ad",
+        "Com Lab 2B": "#c0392b",
+        "Com Lab 2": "#2980b9",
+      };
+      function getVenueColor(venue) {
+        return VENUE_COLORS[venue] || "#95a5a6";
+      }
+      function initCalendar() {
+        if (calendarInitialized) return;
+        calendarInitialized = true;
+        renderVenueLegend();
+        renderCalendar();
+      }
+      function renderVenueLegend() {
+        var legend = document.getElementById("venue-legend");
+        var html = "";
+        for (var venue in VENUE_COLORS) {
+          html +=
+            '<div class="legend-item">' +
+            '<span class="legend-swatch" style="background-color:' +
+            VENUE_COLORS[venue] +
+            '"></span>' +
+            "<span>" +
+            escapeHtml(venue) +
+            "</span></div>";
+        }
+        legend.innerHTML = html;
+      }
+      function navigatePrevious() {
+        if (calendarState.currentView === "month") {
+          calendarState.currentDate.setMonth(
+            calendarState.currentDate.getMonth() - 1,
+          );
+        } else {
+          calendarState.currentDate.setDate(
+            calendarState.currentDate.getDate() - 7,
+          );
+        }
+        renderCalendar();
+      }
+      function navigateNext() {
+        if (calendarState.currentView === "month") {
+          calendarState.currentDate.setMonth(
+            calendarState.currentDate.getMonth() + 1,
+          );
+        } else {
+          calendarState.currentDate.setDate(
+            calendarState.currentDate.getDate() + 7,
+          );
+        }
+        renderCalendar();
+      }
+      function navigateToday() {
+        calendarState.currentDate = new Date();
+        renderCalendar();
+      }
+      function switchCalendarView(view) {
+        calendarState.currentView = view;
+        document
+          .getElementById("btn-month")
+          .classList.toggle("active", view === "month");
+        document
+          .getElementById("btn-week")
+          .classList.toggle("active", view === "week");
+        document
+          .getElementById("month-view")
+          .classList.toggle("active", view === "month");
+        document
+          .getElementById("week-view")
+          .classList.toggle("active", view === "week");
+        renderCalendar();
+      }
+      function renderCalendar() {
+        updateCalendarTitle();
+        if (calendarState.currentView === "month") {
+          renderMonthView();
+        } else {
+          renderWeekView();
+        }
+      }
+      function updateCalendarTitle() {
+        var d = calendarState.currentDate;
+        var title = "";
+        if (calendarState.currentView === "month") {
+          title = d.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+          });
+        } else {
+          var ws = getWeekStart(d);
+          var we = new Date(ws);
+          we.setDate(we.getDate() + 6);
+          title =
+            ws.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
+            " – " +
+            we.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            });
+        }
+        document.getElementById("calendar-title").textContent = title;
+      }
+      function getWeekStart(date) {
+        var d = new Date(date);
+        var day = d.getDay();
+        var diff = (day === 0 ? -6 : 1) - day;
+        d.setDate(d.getDate() + diff);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+      function dateToString(d) {
+        var y = d.getFullYear();
+        var m = (d.getMonth() + 1).toString().padStart(2, "0");
+        var day = d.getDate().toString().padStart(2, "0");
+        return y + "-" + m + "-" + day;
+      }
+      function getExamsForDate(dateStr) {
+        return exams.filter(function (e) {
+          return e.date === dateStr;
+        });
+      }
+      function renderMonthView() {
+        var container = document.getElementById("month-view");
+        var d = calendarState.currentDate;
+        var year = d.getFullYear();
+        var month = d.getMonth();
+        var firstDay = new Date(year, month, 1);
+        var startOffset = (firstDay.getDay() + 6) % 7;
+        var startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - startOffset);
+        var todayStr = dateToString(new Date());
+        var dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        var html = '<div class="month-grid">';
+        for (var i = 0; i < 7; i++) {
+          html += '<div class="month-header-cell">' + dayNames[i] + "</div>";
+        }
+        var current = new Date(startDate);
+        for (var row = 0; row < 6; row++) {
+          for (var col = 0; col < 7; col++) {
+            var curStr = dateToString(current);
+            var isOtherMonth = current.getMonth() !== month;
+            var isToday = curStr === todayStr;
+            var classes = "month-day";
+            if (isOtherMonth) classes += " other-month";
+            if (isToday) classes += " today";
+            html +=
+              '<div class="' +
+              classes +
+              '" data-date="' +
+              curStr +
+              '" onclick="monthDayClick(\'' +
+              curStr +
+              "')\">";
+            html +=
+              '<div class="month-day-number">' + current.getDate() + "</div>";
+            var dayExams = getExamsForDate(curStr);
+            var maxShow = 3;
+            for (var j = 0; j < Math.min(dayExams.length, maxShow); j++) {
+              var ex = dayExams[j];
+              var color = getVenueColor(ex.venue);
+              html +=
+                '<div class="exam-badge" style="background-color:' +
+                color +
+                '" ' +
+                'onclick="event.stopPropagation(); showExamPopup(' +
+                ex.id +
+                ')" ' +
+                'title="' +
+                escapeHtml(ex.name) +
+                " (" +
+                ex.time +
+                ')">' +
+                escapeHtml(ex.name) +
+                "</div>";
+            }
+            if (dayExams.length > maxShow) {
+              html +=
+                '<div class="more-badge" onclick="event.stopPropagation(); monthDayClick(\'' +
+                curStr +
+                "')\">+" +
+                (dayExams.length - maxShow) +
+                " more</div>";
+            }
+            html += "</div>";
+            current.setDate(current.getDate() + 1);
+          }
+        }
+        html += "</div>";
+        container.innerHTML = html;
+      }
+      function monthDayClick(dateStr) {
+        var parts = dateStr.split("-");
+        calendarState.currentDate = new Date(
+          parseInt(parts[0]),
+          parseInt(parts[1]) - 1,
+          parseInt(parts[2]),
+        );
+        switchCalendarView("week");
+      }
+      function renderWeekView() {
+        var container = document.getElementById("week-view");
+        var ws = getWeekStart(calendarState.currentDate);
+        var todayStr = dateToString(new Date());
+        var startHour = 8;
+        var endHour = 17;
+        var hourHeight = 60;
+        var html = '<div class="week-grid">';
+        // Header row
+        html += '<div class="week-header-cell"></div>';
+        for (var i = 0; i < 7; i++) {
+          var day = new Date(ws);
+          day.setDate(day.getDate() + i);
+          var dayStr = dateToString(day);
+          var isToday = dayStr === todayStr;
+          html +=
+            '<div class="week-header-cell' +
+            (isToday ? " today" : "") +
+            '">' +
+            day.toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            }) +
+            "</div>";
+        }
+        // Time rows
+        for (var h = startHour; h < endHour; h++) {
+          var label = (h <= 12 ? h : h - 12) + ":00 " + (h < 12 ? "AM" : "PM");
+          html += '<div class="week-time-label">' + label + "</div>";
+          for (var d = 0; d < 7; d++) {
+            html +=
+              '<div class="week-day-column" data-day="' +
+              d +
+              '" data-hour="' +
+              h +
+              '"></div>';
+          }
+        }
+        html += "</div>";
+        container.innerHTML = html;
+        positionWeekExams(ws, startHour, endHour, hourHeight);
+      }
+      function parseTimeToMinutesClient(timeStr) {
+        if (!timeStr) return 0;
+        var parts = timeStr.split(":");
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      }
+      function positionWeekExams(weekStart, startHour, endHour, hourHeight) {
+        var startMinutes = startHour * 60;
+        var endMinutes = endHour * 60;
+        for (var d = 0; d < 7; d++) {
+          var day = new Date(weekStart);
+          day.setDate(day.getDate() + d);
+          var dayStr = dateToString(day);
+          var dayExams = getExamsForDate(dayStr);
+          dayExams.forEach(function (ex) {
+            var exStart = parseTimeToMinutesClient(ex.time);
+            var exEnd = parseTimeToMinutesClient(ex.endTime);
+            if (exEnd <= startMinutes || exStart >= endMinutes) return;
+            exStart = Math.max(exStart, startMinutes);
+            exEnd = Math.min(exEnd, endMinutes);
+            var topPx = ((exStart - startMinutes) / 60) * hourHeight;
+            var heightPx = Math.max(((exEnd - exStart) / 60) * hourHeight, 18);
+            var color = getVenueColor(ex.venue);
+            var cells = document.querySelectorAll(
+              '.week-day-column[data-day="' + d + '"]',
+            );
+            if (cells.length === 0) return;
+            var firstCell = cells[0];
+            var parentGrid = firstCell.parentElement;
+            var block = document.createElement("div");
+            block.className = "week-exam-block";
+            block.style.backgroundColor = color;
+            block.title =
+              escapeHtml(ex.name) + "\n" + ex.time + " - " + (ex.endTime || "");
+            block.onclick = (function (id) {
+              return function () {
+                showExamPopup(id);
+              };
+            })(ex.id);
+            var cellRect = firstCell.getBoundingClientRect();
+            var gridRect = parentGrid.getBoundingClientRect();
+            var cellLeft = cellRect.left - gridRect.left;
+            var cellTop = cellRect.top - gridRect.top;
+            block.style.position = "absolute";
+            block.style.top = cellTop + topPx + "px";
+            block.style.left = cellLeft + 2 + "px";
+            block.style.width = cellRect.width - 4 + "px";
+            block.style.height = heightPx + "px";
+            block.innerHTML = "<strong>" + escapeHtml(ex.name) + "</strong>";
+            if (heightPx > 30) {
+              block.innerHTML += "<br>" + ex.time + " - " + (ex.endTime || "");
+            }
+            parentGrid.style.position = "relative";
+            parentGrid.appendChild(block);
+          });
+        }
+      }
+      function showExamPopup(examId) {
+        calendarState.selectedExamId = examId;
+        var exam = exams.find(function (e) {
+          return e.id === examId;
+        });
+        if (!exam) return;
+        document.getElementById("popup-title").textContent = exam.name;
+        document.getElementById("popup-date").textContent = formatDate(
+          exam.date,
+        );
+        document.getElementById("popup-time").textContent =
+          exam.time + " - " + (exam.endTime || "N/A");
+        document.getElementById("popup-venue").textContent = exam.venue;
+        document.getElementById("popup-class").textContent = exam.class;
+        document.getElementById("popup-laptops").textContent =
+          exam.laptopsNeeded || 0;
+        document.getElementById("exam-popup").style.display = "flex";
+      }
+      function closeExamPopup() {
+        document.getElementById("exam-popup").style.display = "none";
+        calendarState.selectedExamId = null;
+      }
+      function editExamFromPopup() {
+        var exam = exams.find(function (e) {
+          return e.id === calendarState.selectedExamId;
+        });
+        if (!exam) return;
+        closeExamPopup();
+        document.getElementById("exam-name").value = exam.name || "";
+        document.getElementById("exam-date").value = exam.date || "";
+        document.getElementById("exam-time").value = exam.time || "";
+        document.getElementById("exam-end-time").value = exam.endTime || "";
+        document.getElementById("venue").value = exam.venue || "";
+        document.getElementById("class").value = exam.class || "";
+        document.getElementById("laptop-needed").value =
+          exam.laptopsNeeded || 0;
+        document.querySelectorAll(".tab-button").forEach(function (btn) {
+          btn.classList.remove("active");
+        });
+        document.querySelectorAll(".tab-content").forEach(function (c) {
+          c.classList.remove("active");
+        });
+        document.querySelector('[data-tab="schedule"]').classList.add("active");
+        document.getElementById("schedule").classList.add("active");
+      }
+      // Close popup on overlay click
+      document
+        .getElementById("exam-popup")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeExamPopup();
+        });
+      // Close popup on Escape key
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeExamPopup();
+      });
+      // Initialize on page load
+      loadExams();
+      loadSpreadsheetUrl();
+      initBulkUpload();
+    </script>
+    <p id="app-note" style="font-size: 0.9em; color: black; text-align: center">
+      <strong>Note:</strong> This application is for internal use only and is
+      currently in the early development stage.
+    </p>
+  </body>
+</html>
