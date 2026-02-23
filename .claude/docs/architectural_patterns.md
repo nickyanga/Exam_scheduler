@@ -58,12 +58,12 @@ Clashes are checked per **venue + date** combination only. Same time in differen
 
 ## 4. Tab-Based SPA Navigation
 
-Frontend uses a simple show/hide pattern:
+Frontend uses a simple show/hide pattern with three tabs (Schedule Exam, Calendar View, Check Exam Venue):
 
 ```javascript
 // All tabs: display:none by default, .active sets display:block
 // Tab buttons toggle .active class on both button and content div
-// Data is loaded/refreshed when switching to "view" or "calendar" tabs
+// Calendar tab triggers data load if exams array is empty
 ```
 
 No router or URL-based navigation — purely DOM class toggling.

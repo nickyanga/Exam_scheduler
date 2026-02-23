@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/nickyanga/repos/Work/Exam_scheduler log --stat -10)"
+    ]
+  }
+}
